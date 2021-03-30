@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Interval where
 
@@ -6,32 +7,31 @@ import RIO
 import Say
 import Prelude (cycle)
 
+data App = App { numberIntervals :: !Int, lengthOn :: !Int, lengthPause :: !Int }
+
 data Interval = Interval { switch :: TVar Switch, interval :: TMVar () }
 data Switch = On | Off
 
-runIntervals :: Int -> IO ()
-runIntervals numberIntervals = sequenceA_ $ setupIntervals numberIntervals
+runIntervals :: App -> IO ()
+runIntervals app = runRIO app setupIntervals >>= \i -> sequenceA_ i
 
-setupIntervals :: Int -> [IO ()]
-setupIntervals numberIntervals = take (numberIntervals * 2) $ cycle [intervalOn, intervalOff]
+setupIntervals :: RIO App [IO ()]
+setupIntervals = do
+  App numberIntervals lengthOn lengthPause <- ask
+  return $ take (numberIntervals * 2) $ cycle [intervalOn $ lengthOn * t, intervalOff $ lengthPause * t]
+  where t = 1000000
 
-intervalOn :: IO ()
-intervalOn = do
+intervalOn :: Int -> IO ()
+intervalOn on = do
   sayString "Interval start"
-  t <- makeInterval onValue
+  t <- makeInterval on
   waitInterval t
 
-intervalOff :: IO ()
-intervalOff = do
+intervalOff :: Int -> IO ()
+intervalOff off = do
   sayString "Break start"
-  t <- makeInterval offValue
+  t <- makeInterval off
   waitInterval t
-
-onValue :: Int
-onValue = 3 * 1000000
-
-offValue :: Int
-offValue = 2 * 1000000
 
 stopInterval :: Interval -> IO ()
 stopInterval (Interval switch _) = atomically $ writeTVar switch Off
