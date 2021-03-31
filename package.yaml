@@ -23,6 +23,8 @@ dependencies:
 - base >= 4.7 && < 5
 - rio
 - say
+- optparse-applicative
+- sdl2-mixer
 
 library:
   source-dirs: src
