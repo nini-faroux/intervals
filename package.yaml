@@ -25,6 +25,12 @@ dependencies:
 - say
 - optparse-applicative
 - sdl2-mixer
+- sdl2
+- data-default-class
+
+default-extensions:
+  - OverloadedStrings
+  - NoImplicitPrelude
 
 library:
   source-dirs: src
