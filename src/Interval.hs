@@ -6,31 +6,33 @@ module Interval where
 import RIO
 import Say
 import Prelude (cycle)
+import Sound
 
-data App = App { numberIntervals :: !Int, lengthOn :: !Int, lengthPause :: !Int }
+data App = App { numberIntervals :: !Int, lengthOn :: !Int, lengthPause :: !Int, filePath :: FilePath }
 
 data Interval = Interval { switch :: TVar Switch, interval :: TMVar () }
-data Switch = On | Off
+data Switch = On | Off deriving Show
 
 runIntervals :: App -> IO ()
 runIntervals app = runRIO app setupIntervals >>= \i -> sequenceA_ i
 
 setupIntervals :: RIO App [IO ()]
 setupIntervals = do
-  App numberIntervals lengthOn lengthPause <- ask
-  return $ take (numberIntervals * 2) $ cycle [intervalOn $ lengthOn * t, intervalOff $ lengthPause * t]
+  App numberIntervals lengthOn lengthPause fp <- ask
+  return $ take (numberIntervals * 2) $ cycle [intervalOn fp (lengthOn * t), intervalOff fp (lengthPause * t)]
   where t = 1000000
 
-intervalOn :: Int -> IO ()
-intervalOn on = do
-  sayString "Interval start"
-  t <- makeInterval on
-  waitInterval t
+intervalOn :: FilePath -> Int -> IO ()
+intervalOn = intervalSwitch On
 
-intervalOff :: Int -> IO ()
-intervalOff off = do
-  sayString "Break start"
-  t <- makeInterval off
+intervalOff :: FilePath -> Int -> IO ()
+intervalOff = intervalSwitch Off
+
+intervalSwitch :: Switch -> FilePath -> Int -> IO ()
+intervalSwitch switch fp time = do
+  sayString $ "Interval: " ++ show switch
+  intervalSound fp
+  t <- makeInterval time
   waitInterval t
 
 stopInterval :: Interval -> IO ()
