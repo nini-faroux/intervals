@@ -35,9 +35,6 @@ intervalSwitch switch fp time = do
   t <- makeInterval time
   waitInterval t
 
-stopInterval :: Interval -> IO ()
-stopInterval (Interval switch _) = atomically $ writeTVar switch Off
-
 waitInterval :: Interval -> IO ()
 waitInterval (Interval _ interval) = atomically $ readTMVar interval
 
