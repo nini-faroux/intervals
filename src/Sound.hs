@@ -1,5 +1,6 @@
 module Sound where
 
+import RIO
 import qualified SDL.Mixer as Mix
 import qualified SDL
 
