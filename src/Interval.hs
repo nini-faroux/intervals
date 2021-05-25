@@ -1,6 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module Interval where
 
 import RIO
@@ -8,7 +5,7 @@ import Say
 import Prelude (cycle)
 import Sound
 
-data App = App { numberIntervals :: !Int, lengthOn :: !Int, lengthPause :: !Int, filePath :: FilePath }
+data App = App { numberIntervals :: !Int, lengthOn :: !Int, lengthPause :: !Int, startSoundFile :: !FilePath, endSoundFile :: !FilePath }
 
 data Interval = Interval { switch :: TVar Switch, interval :: TMVar () }
 data Switch = On | Off deriving Show
@@ -18,8 +15,8 @@ runIntervals app = runRIO app setupIntervals >>= \i -> sequenceA_ i
 
 setupIntervals :: RIO App [IO ()]
 setupIntervals = do
-  App numberIntervals lengthOn lengthPause fp <- ask
-  return $ take (numberIntervals * 2) $ cycle [intervalOn fp (lengthOn * t), intervalOff fp (lengthPause * t)]
+  App numberIntervals lengthOn lengthPause ss es <- ask
+  return $ take (numberIntervals * 2) $ cycle [intervalOn ss (lengthOn * t), intervalOff es (lengthPause * t)]
   where t = 1000000
 
 intervalOn :: FilePath -> Int -> IO ()
