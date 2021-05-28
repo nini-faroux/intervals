@@ -4,48 +4,55 @@ import RIO
 import Say
 import Prelude (cycle)
 import Sound
+import Counter
 
-data App = App { numberIntervals :: !Int, lengthOn :: !Int, lengthPause :: !Int, startSoundFile :: !FilePath, endSoundFile :: !FilePath }
+data App = App 
+  { numIntervals :: !Int 
+  , lengthOn :: !Int
+  , lengthPause :: !Int
+  , startSoundFile :: !FilePath
+  , endSoundFile :: !FilePath 
+  }
 
-data Interval = Interval { switch :: TVar Switch, interval :: TMVar () }
 data Switch = On | Off deriving Show
 
-runIntervals :: App -> IO ()
-runIntervals app = runRIO app setupIntervals >>= \i -> sequenceA_ i
+runApp :: App -> IO ()
+runApp app = runRIO app runIntervals
 
-setupIntervals :: RIO App [IO ()]
-setupIntervals = do
-  App numberIntervals lengthOn lengthPause ss es <- ask
-  return $ take (numberIntervals * 2) $ cycle [intervalOn ss (lengthOn * t), intervalOff es (lengthPause * t)]
-  where t = 1000000
+runIntervals :: RIO App ()
+runIntervals = do
+  App numInts lenOn lenOff ss es <- ask
+  intervalsVar <- liftIO $ newTMVarIO (numInts * 2, On)
+  intervals intervalsVar
 
-intervalOn :: FilePath -> Int -> IO ()
-intervalOn = intervalSwitch On
+intervals :: TMVar (Int, Switch) -> RIO App ()
+intervals countVar = do
+  App _ lenOn lenOff ss es <- ask
+  (numIntervals, switch) <- atomically $ readTMVar countVar
+  when (numIntervals == 0) (liftIO exitProgram)
+  case switch of
+    On -> liftIO $ runThreads lenOn ss countVar
+    Off -> liftIO $ runThreads lenOff es countVar
+  atomically $ readTMVar countVar
+  intervals countVar
 
-intervalOff :: FilePath -> Int -> IO ()
-intervalOff = intervalSwitch Off
-
-intervalSwitch :: Switch -> FilePath -> Int -> IO ()
-intervalSwitch switch fp time = do
-  sayString $ "Interval: " ++ show switch
-  intervalSound fp
-  t <- makeInterval time
-  waitInterval t
-
-waitInterval :: Interval -> IO ()
-waitInterval (Interval _ interval) = atomically $ readTMVar interval
-
-makeInterval :: Int -> IO Interval
-makeInterval delay = do
-  switch <- newTVarIO On
-  interval <- newEmptyTMVarIO
-  withAsync (go switch interval) $ \a -> wait a
-  return $ Interval switch interval
+runThreads :: Int -> FilePath -> TMVar (Int, Switch) -> IO ()
+runThreads time file intsVar = do
+  (numIntervals, switch) <- atomically $ takeTMVar intsVar
+  withAsync (go switch) $ \a1 ->
+    withAsync (count file time) $ \a2 -> do
+      _ <- wait a1
+      _ <- wait a2
+      atomically $ putTMVar intsVar (numIntervals - 1, toggle switch)
+      return ()
   where
-    go s i = do
-      threadDelay delay
-      atomically $ do
-        switch <- readTVar s
-        case switch of
-          On -> putTMVar i ()
-          Off -> return ()
+    go s = do
+      sayString $ show s
+      intervalSound file
+
+toggle :: Switch -> Switch
+toggle On = Off
+toggle _ = On
+
+exitProgram :: IO ()
+exitProgram = sayString "Quitting" >> exitSuccess
