@@ -39,16 +39,10 @@ intervals countVar = do
 runThreads :: Int -> FilePath -> TMVar (Int, Switch) -> IO ()
 runThreads time file intsVar = do
   (numIntervals, switch) <- atomically $ takeTMVar intsVar
-  withAsync (go switch) $ \a1 ->
-    withAsync (count file time) $ \a2 -> do
-      _ <- wait a1
-      _ <- wait a2
-      atomically $ putTMVar intsVar (numIntervals - 1, toggle switch)
-      return ()
-  where
-    go s = do
-      sayString $ show s
-      intervalSound file
+  (_, _) <- concurrently (go switch) (count file time)
+  atomically $ putTMVar intsVar (numIntervals - 1, toggle switch)
+  where 
+    go s = sayString (show s) >> intervalSound file
 
 toggle :: Switch -> Switch
 toggle On = Off
