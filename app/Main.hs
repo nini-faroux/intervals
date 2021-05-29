@@ -6,7 +6,7 @@ import Options.Applicative
 
 main :: IO ()
 main = execParser options >>= \opts -> 
-  runIntervals $ App (numberOfIntervals opts) (lengthIntervalOn opts) (lengthIntervalOff opts) (startSound opts) (endSound opts)
+  runApp $ App (numberOfIntervals opts) (lengthIntervalOn opts) (lengthIntervalOff opts) (startSound opts) (endSound opts)
   where
     options = info (helper <*> optionsParser) fullDesc
 

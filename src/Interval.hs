@@ -17,7 +17,7 @@ data App = App
 data Switch = On | Off deriving Show
 
 runApp :: App -> IO ()
-runApp app = runRIO app runIntervals
+runApp app = initializeSound >> runRIO app runIntervals
 
 runIntervals :: RIO App ()
 runIntervals = do
@@ -42,11 +42,11 @@ runThreads time file intsVar = do
   (_, _) <- concurrently (go switch) (count file time)
   atomically $ putTMVar intsVar (numIntervals - 1, toggle switch)
   where 
-    go s = sayString (show s) >> intervalSound file
+    go s = sayString (show s) >> playSound file
 
 toggle :: Switch -> Switch
 toggle On = Off
 toggle _ = On
 
 exitProgram :: IO ()
-exitProgram = sayString "Quitting" >> exitSuccess
+exitProgram = freeSound >> sayString "Quitting" >> exitSuccess
