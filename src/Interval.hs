@@ -33,7 +33,6 @@ intervals countVar = do
   case switch of
     On -> liftIO $ runThreads lenOn ss countVar
     Off -> liftIO $ runThreads lenOff es countVar
-  atomically $ readTMVar countVar
   intervals countVar
 
 runThreads :: Int -> FilePath -> TMVar (Int, Switch) -> IO ()
