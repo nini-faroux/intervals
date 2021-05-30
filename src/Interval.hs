@@ -23,31 +23,31 @@ runApp app = initializeSound >> runRIO app runIntervals
 runIntervals :: RIO App ()
 runIntervals = do
   App numInts lenOn lenOff ss es songs <- ask
-  intervalsVar <- liftIO $ newTMVarIO (numInts * 2, On)
-  intervals intervalsVar
+  countVar <- liftIO $ newTMVarIO (numInts * 2, On)
+  concurrently' (intervals countVar) (liftIO $ playSongs songs)
 
 intervals :: TMVar (Int, Switch) -> RIO App ()
 intervals countVar = do
   App _ lenOn lenOff ss es songs <- ask
   (numIntervals, switch) <- atomically $ readTMVar countVar
   when (numIntervals == 0) (liftIO exitProgram)
-  case switch of
-    On -> liftIO $ runThreads lenOn ss songs countVar
-    Off -> liftIO $ runThreads lenOff es songs countVar
+  runThreads countVar
   intervals countVar
 
-runThreads :: Int -> FilePath -> [FilePath] -> TMVar (Int, Switch) -> IO ()
-runThreads time file songs intsVar = do
-  (numIntervals, switch) <- atomically $ takeTMVar intsVar
-  withAsync (go switch) $ \a1 ->
-    withAsync (count file time) $ \a2 ->
-      withAsync (playSongs songs) $ \a3 -> do
-        _ <- wait a1
-        _ <- wait a2
-        return ()
-  atomically $ putTMVar intsVar (numIntervals - 1, toggle switch)
-  where 
-    go s = sayString (show s) >> playSound file
+runThreads :: TMVar (Int, Switch) -> RIO App ()
+runThreads countVar = do
+  App _ lenOn lenOff ss es songs <- ask
+  (numIntervals, switch) <- atomically $ takeTMVar countVar
+  case switch of
+    On -> conc On ss lenOn
+    Off -> conc Off es lenOff 
+  atomically $ putTMVar countVar (numIntervals - 1, toggle switch)
+  where
+    conc s fp time = concurrently' (liftIO $ go s fp) (liftIO $ count fp time)
+    go s fp = sayString (show s) >> playSound fp
+
+concurrently' :: RIO App a -> RIO App b -> RIO App ()
+concurrently' x y = withRunInIO $ \run -> concurrently_ (run x) (run y)
 
 toggle :: Switch -> Switch
 toggle On = Off
