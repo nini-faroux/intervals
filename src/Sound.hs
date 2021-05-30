@@ -16,6 +16,9 @@ initializeSound = do
 playSound :: FilePath -> IO ()
 playSound fp = Mix.load fp >>= \s -> Mix.play s
 
+playSongs :: [FilePath] -> IO ()
+playSongs = mapM_ (Mix.load >=> \s -> Mix.play s)
+
 freeSound :: IO ()
 freeSound = do
   Mix.closeAudio
