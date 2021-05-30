@@ -17,7 +17,13 @@ playSound :: FilePath -> IO ()
 playSound fp = Mix.load fp >>= \s -> Mix.play s
 
 playSongs :: [FilePath] -> IO ()
-playSongs = mapM_ (Mix.load >=> \s -> Mix.play s)
+playSongs = mapM_ (Mix.load >=> \s -> playSong s)
+
+playSong :: Mix.Chunk -> IO ()
+playSong s = Mix.play s >> loopSound (Mix.playing Mix.AllChannels)
+
+loopSound :: IO Bool -> IO ()
+loopSound ioCond = ioCond >>= \cond -> when cond (loopSound ioCond)
 
 freeSound :: IO ()
 freeSound = do
