@@ -10,9 +10,9 @@ type Counter = TMVar Int
 makeCounter :: Int -> IO Counter
 makeCounter = newTMVarIO
 
-count :: FilePath -> Int -> IO ()
-count fp n = makeCounter n >>= \counter -> 
-  replicateM_ n $ concurrently (decrement counter) (warningSound fp counter)
+count :: FilePath -> Int -> String -> IO ()
+count fp n switch = makeCounter n >>= \counter -> 
+  replicateM_ n $ concurrently (decrement counter) (warningSound fp counter switch)
 
 decrement :: Counter -> IO ()
 decrement counterVar = do
@@ -23,7 +23,7 @@ decrement counterVar = do
     readTMVar counterVar
   sayString $ show c
 
-warningSound :: FilePath -> Counter -> IO ()
-warningSound fp counterVar = do
+warningSound :: FilePath -> Counter -> String -> IO ()
+warningSound fp counterVar switch = do
   n <- atomically $ readTMVar counterVar
-  when (n == 10) (playSound fp)
+  when (n == 10 && switch == "On") (playSound fp)

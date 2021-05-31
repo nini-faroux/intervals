@@ -42,7 +42,7 @@ runThreads countVar = do
     Off -> conc Off es lenOff 
   atomically $ putTMVar countVar (numIntervals - 1, toggle switch)
   where
-    conc s fp time = concurrently' (liftIO $ go s fp) (liftIO $ count fp time)
+    conc s fp time = concurrently' (liftIO $ go s fp) (liftIO $ count fp time (show s))
     go s fp = sayString (show s) >> playSound fp
 
 concurrently' :: RIO App a -> RIO App b -> RIO App ()
