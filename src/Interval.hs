@@ -2,7 +2,6 @@ module Interval where
 
 import RIO
 import Say
-import Prelude (cycle)
 import Sound
 import Counter
 
@@ -29,7 +28,7 @@ runIntervals = do
 intervals :: TMVar (Int, Switch) -> RIO App ()
 intervals countVar = do
   App _ lenOn lenOff ss es songs <- ask
-  (numIntervals, switch) <- atomically $ readTMVar countVar
+  (numIntervals, _) <- atomically $ readTMVar countVar
   when (numIntervals == 0) (liftIO exitProgram)
   runThreads countVar
   intervals countVar
@@ -54,4 +53,4 @@ toggle On = Off
 toggle _ = On
 
 exitProgram :: IO ()
-exitProgram = freeSound >> sayString "Quitting" >> exitSuccess
+exitProgram = freeSound >> sayString "Quitting..." >> threadDelay 2000000 >> exitSuccess
