@@ -35,12 +35,17 @@ default-extensions:
 
 library:
   source-dirs: src
+  ghc-options:
+  - -fwrite-ide-info 
+  - -hiedir=.hie
 
 executables:
   intervals-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
+    - -fwrite-ide-info
+    - -hiedir=.hie
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N

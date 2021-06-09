@@ -11,7 +11,7 @@ data App = App
   , lengthPause :: !Int
   , startSoundFile :: !FilePath
   , endSoundFile :: !FilePath 
-  , songs :: [FilePath]
+  , songs :: ![FilePath]
   }
 
 data Switch = On | Off deriving Show

@@ -18,7 +18,7 @@ optionsReader = do
       maybeNums = readMaybe <$> [x, y, z]
    in case maybeNums of
      [Just a, Just b, Just c] -> return $ Options a b c d e f g
-     _ -> error "Bad input"
+     _notNums -> error "Bad input"
 
 optionsParser :: Parser Options
 optionsParser = option optionsReader (short 'i')
